@@ -23,12 +23,16 @@ public class PuzzleGridAdapter extends BaseAdapter
    private ArrayList<Bitmap> mPuzzlePieces;
    private int mScaleWidth;
    private int mScaleHeight;
+   private PuzzleBoard mPuzzleBoard;
+   private PuzzleBoard.OnTouchPuzzlePiece mPuzzleOnTouch;
+   private GridView mGridView;
    
    public PuzzleGridAdapter(Context aContext, Integer aSelection,
-                            String aSelectionPath)
+                            String aSelectionPath, GridView aGrid)
    {
       mPuzzlePieces = new ArrayList<Bitmap>();
       mContext = aContext;
+      mGridView = aGrid;
       loadImage(aSelection, aSelectionPath);
    }
 
@@ -51,7 +55,33 @@ public class PuzzleGridAdapter extends BaseAdapter
       mScaleHeight = mScreenSize.y / mSplit;
       
       Bitmap lScaled = scaleImage();
-      
+      setupPuzzlePieces(lScaled);
+      setupMovablePiece();
+      setupGrid();
+      initializePuzzleBoard();
+      return true;
+   }
+
+   private void setupGrid()
+   {
+      mGridView.setNumColumns(mSplit);
+   }
+
+   private void initializePuzzleBoard()
+   {
+      mPuzzleBoard = new PuzzleBoard(mPuzzlePieces, mGridView, mSplit);
+      mPuzzleOnTouch = mPuzzleBoard.new OnTouchPuzzlePiece();
+   }
+
+   private void setupMovablePiece()
+   {
+      //Replace the last puzzle piece with a special blank piece
+      mPuzzlePieces.remove(mPuzzlePieces.size()-1);
+      mPuzzlePieces.add(Bitmap.createBitmap(mScaleWidth, mScaleHeight, Bitmap.Config.RGB_565));
+   }
+
+   private void setupPuzzlePieces(Bitmap aScaled)
+   {
       int lX = 0, lY = 0;
       for(int y = 0; y < mSplit; ++y)
       {
@@ -59,12 +89,11 @@ public class PuzzleGridAdapter extends BaseAdapter
          for(int x = 0; x < mSplit; ++x)
          {
             mPuzzlePieces.add(Bitmap.createBitmap
-                  (lScaled, lX, lY, mScaleWidth, mScaleHeight));
+                  (aScaled, lX, lY, mScaleWidth, mScaleHeight));
             lX += mScaleWidth;
          }
          lY += mScaleHeight;
       }
-      return true;
    }
 
    private Bitmap scaleImage()
@@ -109,19 +138,23 @@ public class PuzzleGridAdapter extends BaseAdapter
    @Override
    public int getCount()
    {
-      return mPuzzlePieces.size();
+      if(mPuzzleBoard == null)
+      {
+         return 0;
+      }
+      return mPuzzleBoard.size();
    }
 
    @Override
    public Object getItem(int aPosition)
    {
-      return mPuzzlePieces.get(aPosition);
+      return mPuzzleBoard.getPiece(aPosition);
    }
 
    @Override
    public long getItemId(int aPosition)
    {
-      return aPosition;
+      return mPuzzleBoard.getPieceId(aPosition);
    }
 
    @Override
@@ -131,9 +164,11 @@ public class PuzzleGridAdapter extends BaseAdapter
       if(aConvertView == null)
       {
          lImage = new ImageView(mContext);
+         lImage.setTag(aPosition);
          lImage.setLayoutParams(new GridView.LayoutParams(mScaleWidth, mScaleHeight));
+         lImage.setOnTouchListener(mPuzzleOnTouch);
       }
-      lImage.setImageBitmap(mPuzzlePieces.get(aPosition));
+      lImage.setImageBitmap(mPuzzleBoard.getPiece(aPosition));
       
       return lImage;
    }

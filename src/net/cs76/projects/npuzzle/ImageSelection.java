@@ -23,7 +23,7 @@ public class ImageSelection extends ListActivity
    @Override
    protected void onListItemClick(ListView aListView, View aView, int aPosition, long aId) 
    {
-      Intent lLaunchPuzzle = new Intent(this, Puzzle.class);
+      Intent lLaunchPuzzle = new Intent(this, GamePlay.class);
       
       lLaunchPuzzle.putExtra("selection", aPosition);
       lLaunchPuzzle.putExtra("selection.path", sAssetPath);

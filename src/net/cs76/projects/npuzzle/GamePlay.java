@@ -8,7 +8,7 @@ import android.view.View;
 import android.view.Window;
 import android.widget.GridView;
 
-public class Puzzle extends Activity
+public class GamePlay extends Activity
 {
    private PuzzleGridAdapter mAdapter;
    private Point mScreenSize;
@@ -26,7 +26,7 @@ public class Puzzle extends Activity
       Integer lSelection = lExtras.getInt("selection");
       String lSelectionPath = lExtras.getString("selection.path");
       GridView lGrid = (GridView) findViewById(R.id.puzzleGrid);
-      mAdapter = new PuzzleGridAdapter(this, lSelection, lSelectionPath);
+      mAdapter = new PuzzleGridAdapter(this, lSelection, lSelectionPath, lGrid);
       lGrid.setAdapter(mAdapter);
    }
    
@@ -41,7 +41,7 @@ public class Puzzle extends Activity
       //only load split if on creation
       if(mCreated)
       {
-         setSplit(3);
+         setSplit(5);
          mCreated = false;
       }
    }
@@ -57,8 +57,5 @@ public class Puzzle extends Activity
    private void setSplit(int aSplit)
    {
       mAdapter.setup(aSplit, mScreenSize);
-      GridView lGrid = (GridView) findViewById(R.id.puzzleGrid);
-      lGrid.setNumColumns(aSplit);
-      lGrid.invalidateViews();
    }
 }

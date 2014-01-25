@@ -24,7 +24,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="net.cs76.projects.npuzzle.Puzzle"
+            android:name="net.cs76.projects.npuzzle.GamePlay"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/title_activity_puzzle"
             android:theme="@android:style/Theme.NoTitleBar" >
