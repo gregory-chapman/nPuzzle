@@ -18,6 +18,7 @@ public class PuzzleBoard
    private Point mBlankLocation;
    private Point mMoveLocation;
    private Point[] mMovableLocations;
+   private int mUserMoves;
 
    private enum Locations
    {
@@ -47,6 +48,7 @@ public class PuzzleBoard
          mPuzzleBoard[i] = i;
       }
       updateBlankLocation(mPuzzleBoard.length - 1);
+      mUserMoves = 0;
    }
 
    private int findPosition(Point aLocation)
@@ -119,7 +121,21 @@ public class PuzzleBoard
 
    public void shuffle()
    {
-      // TODO
+      //simple reverse
+      int lId = mPuzzleBoard.length - 2;
+      for (int i = 0; i < (mPuzzleBoard.length - 1); ++i)
+      {
+         mPuzzleBoard[i] = lId--;
+      }
+      
+      //if split is even, at the end of shuffle, must swap 1,2
+      if(mSplit % 2 == 0)
+      {
+         lId = mPuzzleBoard[mPuzzleBoard.length - 2];
+         mPuzzleBoard[mPuzzleBoard.length - 2] = mPuzzleBoard[mPuzzleBoard.length - 3];
+         mPuzzleBoard[mPuzzleBoard.length - 3] = lId;
+      }
+      updateBlankLocation(mPuzzleBoard.length - 1);
    }
 
    public int size()
@@ -146,6 +162,7 @@ public class PuzzleBoard
          mPuzzleBoard[lBlankPosition] = mPuzzleBoard[aPosition];
          mPuzzleBoard[aPosition] = lBlankId;
          updateBlankLocation(aPosition);
+         ++mUserMoves;
       }
    }
 
@@ -172,5 +189,10 @@ public class PuzzleBoard
          }
          return true;
       }
+   }
+   
+   public int getUserMoves()
+   {
+      return mUserMoves;
    }
 }

@@ -1,9 +1,32 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
-        android:id="@+id/action_settings"
+        android:id="@+id/settings_reset"
         android:orderInCategory="100"
         android:showAsAction="never"
-        android:title="@string/action_settings"/>
+        android:title="@string/settings_reset"/>
+    <item
+        android:id="@+id/settings_pickpuzzle"
+        android:showAsAction="never"
+        android:title="@string/settings_pickpuzzle"/>
+    <item
+        android:id="@+id/settings_difficulty"
+        android:menuCategory="container"
+        android:title="@string/settings_difficulty">
+        <menu>
+            <item
+                android:id="@+id/settings_difficulty_easy"
+                android:title="@string/settings_difficulty_easy">
+            </item>
+            <item
+                android:id="@+id/settings_difficulty_medium"
+                android:title="@string/settings_difficulty_medium">
+            </item>
+            <item
+                android:id="@+id/settings_difficulty_hard"
+                android:title="@string/settings_difficulty_hard">
+            </item>
+        </menu>
+    </item>
 
 </menu>

@@ -3,21 +3,28 @@ package net.cs76.projects.npuzzle;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Paint.Style;
 import android.graphics.Point;
+import android.os.CountDownTimer;
+import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 public class PuzzleGridAdapter extends BaseAdapter
 {
    private Context mContext;
-   private Point mScreenSize = new Point();
+   private Point mScreenSize;
    private Bitmap mPuzzleImage;
    private int mSplit;
    private ArrayList<Bitmap> mPuzzlePieces;
@@ -26,10 +33,14 @@ public class PuzzleGridAdapter extends BaseAdapter
    private PuzzleBoard mPuzzleBoard;
    private PuzzleBoard.OnTouchPuzzlePiece mPuzzleOnTouch;
    private GridView mGridView;
+   private static final int sBorderWidth = 1;
+   private static final int sCountdown = 4000;
+   private static final int sCountdownInterval = 1000;
    
    public PuzzleGridAdapter(Context aContext, Integer aSelection,
                             String aSelectionPath, GridView aGrid)
    {
+      mScreenSize = new Point();
       mPuzzlePieces = new ArrayList<Bitmap>();
       mContext = aContext;
       mGridView = aGrid;
@@ -70,7 +81,47 @@ public class PuzzleGridAdapter extends BaseAdapter
    private void initializePuzzleBoard()
    {
       mPuzzleBoard = new PuzzleBoard(mPuzzlePieces, mGridView, mSplit);
-      mPuzzleOnTouch = mPuzzleBoard.new OnTouchPuzzlePiece();
+      //disable clicking
+      mPuzzleOnTouch = null;
+      mGridView.invalidateViews();
+      
+      countDownShuffle();
+   }
+
+   @SuppressLint("ShowToast")
+   private void countDownShuffle()
+   {
+      final Toast lToast = Toast.makeText(mContext, "", Toast.LENGTH_SHORT);
+      //Count down with a toast
+      final Handler lDelay = new Handler();
+      
+      new CountDownTimer(sCountdown, sCountdownInterval)
+      {
+         @Override
+         public void onFinish()
+         {
+            lToast.cancel();
+            //enable clicking
+            mPuzzleOnTouch = mPuzzleBoard.new OnTouchPuzzlePiece();
+            mPuzzleBoard.shuffle();
+         }
+
+         @Override
+         public void onTick(long aMillisUntilFinished)
+         {
+            final int lTimeLeft = (int) aMillisUntilFinished / 1000;
+            
+            lDelay.post(new Runnable()
+            {
+               @Override
+               public void run()
+               {
+                  lToast.setText(""+lTimeLeft);
+                  lToast.show();
+               }
+            });
+         }
+      }.start();
    }
 
    private void setupMovablePiece()
@@ -82,14 +133,26 @@ public class PuzzleGridAdapter extends BaseAdapter
 
    private void setupPuzzlePieces(Bitmap aScaled)
    {
+      Canvas lBorder = new Canvas();
+      Paint lPaint = new Paint();
+      lPaint.setColor(Color.WHITE);
+      lPaint.setStrokeWidth(sBorderWidth);
+      lPaint.setStyle(Style.STROKE);
+      
       int lX = 0, lY = 0;
       for(int y = 0; y < mSplit; ++y)
       {
          lX = 0;
          for(int x = 0; x < mSplit; ++x)
          {
-            mPuzzlePieces.add(Bitmap.createBitmap
-                  (aScaled, lX, lY, mScaleWidth, mScaleHeight));
+            Bitmap lPiece = Bitmap.createBitmap
+                  (aScaled, lX, lY, mScaleWidth, mScaleHeight);
+            mPuzzlePieces.add(lPiece);
+            
+            lBorder.setBitmap(lPiece);
+            lBorder.drawRect(0, 0, mScaleWidth-sBorderWidth,
+                             mScaleHeight-sBorderWidth, lPaint);
+            
             lX += mScaleWidth;
          }
          lY += mScaleHeight;
@@ -166,11 +229,15 @@ public class PuzzleGridAdapter extends BaseAdapter
          lImage = new ImageView(mContext);
          lImage.setTag(aPosition);
          lImage.setLayoutParams(new GridView.LayoutParams(mScaleWidth, mScaleHeight));
-         lImage.setOnTouchListener(mPuzzleOnTouch);
       }
+      lImage.setOnTouchListener(mPuzzleOnTouch);
       lImage.setImageBitmap(mPuzzleBoard.getPiece(aPosition));
       
       return lImage;
    }
 
+   public void reset()
+   {
+      initializePuzzleBoard();
+   }
 }

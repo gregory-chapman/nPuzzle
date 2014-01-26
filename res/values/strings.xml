@@ -2,10 +2,12 @@
 <resources>
 
     <string name="app_name">nPuzzle</string>
-    <string name="title_activity_image_selection">ImageSelection</string>
-    <string name="action_settings">Settings</string>
     <string name="default_puzzle">DefaultPuzzle</string>
-    <string name="title_activity_puzzle">Puzzle</string>
-    <string name="hello_world">Hello world!</string>
+    <string name="settings_reset">Reset</string>
+    <string name="settings_pickpuzzle">Pick puzzle</string>
+    <string name="settings_difficulty">Difficulty</string>
+    <string name="settings_difficulty_easy">Easy</string>
+    <string name="settings_difficulty_medium">Medium</string>
+    <string name="settings_difficulty_hard">Hard</string>
 
 </resources>

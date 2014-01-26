@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.GridView;
@@ -44,6 +45,30 @@ public class GamePlay extends Activity
          setSplit(5);
          mCreated = false;
       }
+   }
+   
+   @Override
+   public boolean onOptionsItemSelected(MenuItem aItem) 
+   {
+      switch(aItem.getItemId())
+      {
+         case R.id.settings_reset:
+            mAdapter.reset();
+            break;
+         case R.id.settings_difficulty_easy:
+            setSplit(3);
+            break;
+         case R.id.settings_difficulty_medium:
+            setSplit(4);
+            break;
+         case R.id.settings_difficulty_hard:
+            setSplit(5);
+            break;
+         case R.id.settings_pickpuzzle:
+            finish();
+            break;
+      }
+      return true;
    }
    
    @Override
