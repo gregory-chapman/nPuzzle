@@ -3,8 +3,9 @@ package net.cs76.projects.npuzzle;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+
 import android.annotation.SuppressLint;
-import android.content.Context;
+import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -23,30 +24,43 @@ import android.widget.Toast;
 
 public class PuzzleGridAdapter extends BaseAdapter
 {
-   private Context mContext;
+   private Activity mContext;
    private Point mScreenSize;
-   private Bitmap mPuzzleImage;
    private int mSplit;
    private ArrayList<Bitmap> mPuzzlePieces;
    private int mScaleWidth;
    private int mScaleHeight;
+   private GridView.LayoutParams mImageLayout;
    private PuzzleBoard mPuzzleBoard;
    private PuzzleBoard.OnTouchPuzzlePiece mPuzzleOnTouch;
    private GridView mGridView;
+   private Integer mSelection;
+   private String mSelectionPath;
    private static final int sBorderWidth = 1;
    private static final int sCountdown = 4000;
    private static final int sCountdownInterval = 1000;
    
-   public PuzzleGridAdapter(Context aContext, Integer aSelection,
+   public PuzzleGridAdapter(Activity aContext, Integer aSelection,
                             String aSelectionPath, GridView aGrid)
    {
+      mSelection = aSelection;
+      mSelectionPath = aSelectionPath;
       mScreenSize = new Point();
       mPuzzlePieces = new ArrayList<Bitmap>();
       mContext = aContext;
       mGridView = aGrid;
-      loadImage(aSelection, aSelectionPath);
    }
 
+   public void dispose()
+   {
+      for(Bitmap image : mPuzzlePieces)
+      {
+         image.recycle();
+      }
+      mPuzzlePieces.clear();
+      mPuzzleBoard = null;
+   }
+   
    /**
     * Will set the split for the puzzle square
     * @param aSplit Split count in one dimension
@@ -54,23 +68,26 @@ public class PuzzleGridAdapter extends BaseAdapter
     */
    public boolean setup(int aSplit, Point aScreenSize)
    {
-      mSplit = aSplit;
-      mScreenSize = aScreenSize;
-      
-      mPuzzlePieces.clear();
-      if(mPuzzleImage == null || mSplit == 0)
+      if(aSplit == 0)
       { 
          return false;
       }
+      
+      dispose();
+      mSplit = aSplit;
+      mScreenSize = aScreenSize;
       mScaleWidth = mScreenSize.x / mSplit;
       mScaleHeight = mScreenSize.y / mSplit;
+      mImageLayout = new GridView.LayoutParams(mScaleWidth, mScaleHeight);
       
-      Bitmap lScaled = scaleImage();
-      setupPuzzlePieces(lScaled);
-      setupMovablePiece();
-      setupGrid();
-      initializePuzzleBoard();
-      return true;
+      if(setupPuzzlePieces())
+      {
+         setupMovablePiece();
+         setupGrid();
+         initializePuzzleBoard();
+         return true;
+      }
+      return false;
    }
 
    private void setupGrid()
@@ -80,7 +97,13 @@ public class PuzzleGridAdapter extends BaseAdapter
 
    private void initializePuzzleBoard()
    {
-      mPuzzleBoard = new PuzzleBoard(mPuzzlePieces, mGridView, mSplit);
+      mPuzzleBoard = new PuzzleBoard
+                           (mContext, 
+                            mPuzzlePieces, 
+                            mGridView, 
+                            mSplit,
+                            mSelection,
+                            mSelectionPath);
       //disable clicking
       mPuzzleOnTouch = null;
       mGridView.invalidateViews();
@@ -131,8 +154,14 @@ public class PuzzleGridAdapter extends BaseAdapter
       mPuzzlePieces.add(Bitmap.createBitmap(mScaleWidth, mScaleHeight, Bitmap.Config.RGB_565));
    }
 
-   private void setupPuzzlePieces(Bitmap aScaled)
+   private boolean setupPuzzlePieces()
    {
+      Bitmap lScaled = scaleImage();
+      if(lScaled == null)
+      {
+         return false;
+      }
+      
       Canvas lBorder = new Canvas();
       Paint lPaint = new Paint();
       lPaint.setColor(Color.WHITE);
@@ -146,7 +175,7 @@ public class PuzzleGridAdapter extends BaseAdapter
          for(int x = 0; x < mSplit; ++x)
          {
             Bitmap lPiece = Bitmap.createBitmap
-                  (aScaled, lX, lY, mScaleWidth, mScaleHeight);
+                  (lScaled, lX, lY, mScaleWidth, mScaleHeight);
             mPuzzlePieces.add(lPiece);
             
             lBorder.setBitmap(lPiece);
@@ -157,38 +186,65 @@ public class PuzzleGridAdapter extends BaseAdapter
          }
          lY += mScaleHeight;
       }
+      lScaled.recycle();
+      return true;
    }
 
    private Bitmap scaleImage()
    {
+      Bitmap lOriginal = loadImage();
+      if(lOriginal == null)
+      {
+         return null;
+      }
       double lScale = 0;
       double lDestinationWidth = mScreenSize.x;
       double lDestinationHeight = mScreenSize.y;
-      if(mPuzzleImage.getWidth() < mPuzzleImage.getHeight())
+      if(lOriginal.getWidth() < lOriginal.getHeight())
       {
-         lScale = mPuzzleImage.getWidth() / lDestinationWidth;
-         lDestinationHeight = (int)Math.ceil(mPuzzleImage.getHeight() / lScale);
+         lScale = lOriginal.getWidth() / lDestinationWidth;
+         int newHeight = (int)Math.ceil(lOriginal.getHeight() / lScale);
+         if(newHeight < lDestinationHeight)
+         {
+            lScale = lOriginal.getHeight() / lDestinationHeight;
+            lDestinationWidth = (int)Math.ceil(lOriginal.getWidth() / lScale);
+         }
+         else
+         {
+            lDestinationHeight = newHeight;
+         }
       }
       else
       {
-         lScale = mPuzzleImage.getHeight() / lDestinationHeight;
-         lDestinationWidth = (int)Math.ceil(mPuzzleImage.getWidth() / lScale);
-
+         lScale = lOriginal.getHeight() / lDestinationHeight;
+         int newWidth = (int)Math.ceil(lOriginal.getWidth() / lScale);
+         if(newWidth < lDestinationWidth)
+         {
+            lScale = lOriginal.getWidth() / lDestinationWidth;
+            lDestinationHeight = (int)Math.ceil(lOriginal.getHeight() / lScale);
+         }
+         else
+         {
+            lDestinationWidth = newWidth;
+         }
       }
-      return Bitmap.createScaledBitmap
-            (mPuzzleImage, (int)lDestinationWidth, (int)lDestinationHeight, false);
+      Bitmap lReturn = Bitmap.createScaledBitmap
+         (lOriginal, (int)lDestinationWidth, (int)lDestinationHeight, false);
+      lOriginal.recycle();
+      return lReturn;
    }
 
-   private void loadImage(Integer aSelection, String aSelectionPath)
+   private Bitmap loadImage()
    {
+      Bitmap lPuzzleImage = null;
       try
       {
-         String[] lList = mContext.getAssets().list(aSelectionPath);
-         if(aSelection < lList.length)
+         String[] lList = mContext.getAssets().list(mSelectionPath);
+         if(mSelection < lList.length)
          {
-            File lPath = new File(aSelectionPath);
-            File lImage = new File(lPath, lList[aSelection]);
-            mPuzzleImage = BitmapFactory.decodeStream
+            File lPath = new File(mSelectionPath);
+            File lImage = new File(lPath, lList[mSelection]);
+            lPuzzleImage = BitmapFactory.decodeStream
                   (mContext.getAssets().open(lImage.getPath()), null, null);
          }
       } 
@@ -196,6 +252,7 @@ public class PuzzleGridAdapter extends BaseAdapter
       {
          e.printStackTrace();
       }
+      return lPuzzleImage;
    }
 
    @Override
@@ -227,9 +284,9 @@ public class PuzzleGridAdapter extends BaseAdapter
       if(aConvertView == null)
       {
          lImage = new ImageView(mContext);
-         lImage.setTag(aPosition);
-         lImage.setLayoutParams(new GridView.LayoutParams(mScaleWidth, mScaleHeight));
       }
+      lImage.setTag(aPosition);
+      lImage.setLayoutParams(mImageLayout);
       lImage.setOnTouchListener(mPuzzleOnTouch);
       lImage.setImageBitmap(mPuzzleBoard.getPiece(aPosition));
       

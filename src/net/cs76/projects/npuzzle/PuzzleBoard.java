@@ -2,6 +2,8 @@ package net.cs76.projects.npuzzle;
 
 import java.util.ArrayList;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.view.MotionEvent;
@@ -19,14 +21,26 @@ public class PuzzleBoard
    private Point mMoveLocation;
    private Point[] mMovableLocations;
    private int mUserMoves;
+   private Activity mContext;
+   private int mSelection;
+   private String mSelectionPath;
 
    private enum Locations
    {
       Left, Right, Up, Down
    }
 
-   public PuzzleBoard(ArrayList<Bitmap> aPuzzlePieces, GridView aGridView, int aSplit)
+   public PuzzleBoard(Activity aContext, 
+                      ArrayList<Bitmap> aPuzzlePieces, 
+                      GridView aGridView, 
+                      int aSplit, 
+                      int aSelection, 
+                      String aSelectionPath)
    {
+      mUserMoves = 0;
+      mSelection = aSelection;
+      mSelectionPath = aSelectionPath;
+      mContext = aContext;
       mBlankLocation = new Point();
       mMoveLocation = new Point();
       mPuzzleBoard = new int[aPuzzlePieces.size()];
@@ -48,7 +62,6 @@ public class PuzzleBoard
          mPuzzleBoard[i] = i;
       }
       updateBlankLocation(mPuzzleBoard.length - 1);
-      mUserMoves = 0;
    }
 
    private int findPosition(Point aLocation)
@@ -83,9 +96,14 @@ public class PuzzleBoard
          }
       }
       
-      if(lIsComplete)
+      if(lIsComplete && mUserMoves != 0)
       {
-         //TODO
+         Intent lIntent = new Intent(mContext, YouWin.class);
+         lIntent.putExtra("moves", mUserMoves);
+         lIntent.putExtra("selection", mSelection);
+         lIntent.putExtra("selectionPath", mSelectionPath);
+         mContext.startActivity(lIntent);
+         mContext.finish();
       }
    }
 
@@ -121,6 +139,7 @@ public class PuzzleBoard
 
    public void shuffle()
    {
+      mUserMoves = 0;
       //simple reverse
       int lId = mPuzzleBoard.length - 2;
       for (int i = 0; i < (mPuzzleBoard.length - 1); ++i)
@@ -157,12 +176,12 @@ public class PuzzleBoard
    {
       if(isMovable(findLocation(aPosition, mMoveLocation)))
       {
+         ++mUserMoves;
          int lBlankPosition = findPosition(mBlankLocation);
          int lBlankId = mPuzzleBoard[lBlankPosition];
          mPuzzleBoard[lBlankPosition] = mPuzzleBoard[aPosition];
          mPuzzleBoard[aPosition] = lBlankId;
          updateBlankLocation(aPosition);
-         ++mUserMoves;
       }
    }
 

@@ -32,6 +32,13 @@ public class GamePlay extends Activity
    }
    
    @Override
+   protected void onDestroy()
+   {
+      super.onDestroy();
+      mAdapter.dispose();
+   }
+   
+   @Override
    public void onWindowFocusChanged(boolean aHasFocus)
    {
       super.onWindowFocusChanged(aHasFocus);
@@ -42,7 +49,7 @@ public class GamePlay extends Activity
       //only load split if on creation
       if(mCreated)
       {
-         setSplit(5);
+         setSplit(3);
          mCreated = false;
       }
    }
