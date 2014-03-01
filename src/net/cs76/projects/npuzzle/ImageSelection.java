@@ -6,6 +6,11 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ListView;
 
+/**
+ * Activity to select a puzzle to play
+ * @author Greg Chapman
+ *
+ */
 public class ImageSelection extends ListActivity
 {
    private static final String sAssetPath = "puzzles";
@@ -15,6 +20,9 @@ public class ImageSelection extends ListActivity
    protected void onCreate(Bundle savedInstanceState)
    {
       super.onCreate(savedInstanceState);
+      
+      //TODO check if saved game
+      
       
       mAdapter = new ImageListAdapter(this, sAssetPath);
       setListAdapter(mAdapter);

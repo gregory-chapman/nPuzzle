@@ -1,33 +1,47 @@
 package net.cs76.projects.npuzzle;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.graphics.Point;
 import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.os.Handler;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.Window;
 import android.widget.GridView;
+import android.widget.Toast;
 
+/**
+ * Activity that contains the puzzle board.
+ * Will count down and shuffle pieces to start.
+ * @author Greg Chapman
+ *
+ */
 public class GamePlay extends Activity
 {
+   private boolean mInitialized;
+   private ImageUtility mImageUtility;
    private PuzzleGridAdapter mAdapter;
-   private Point mScreenSize;
-   private boolean mCreated = false;
+   private static final int sCountdown = 4000;
+   private static final int sCountdownInterval = 1000;
    
    @Override
    protected void onCreate(Bundle aSavedInstanceState)
    {
       super.onCreate(aSavedInstanceState);
+      
+      mInitialized = false;
       setContentView(R.layout.activity_puzzle);
       Bundle lExtras = getIntent().getExtras();
       
-      mCreated = true;
-      mScreenSize = new Point();
       Integer lSelection = lExtras.getInt("selection");
       String lSelectionPath = lExtras.getString("selection.path");
       GridView lGrid = (GridView) findViewById(R.id.puzzleGrid);
-      mAdapter = new PuzzleGridAdapter(this, lSelection, lSelectionPath, lGrid);
+      mImageUtility = new ImageUtility(this);
+      mAdapter = new PuzzleGridAdapter(this, 
+                                       lSelection, 
+                                       lSelectionPath, 
+                                       lGrid, 
+                                       mImageUtility);
       lGrid.setAdapter(mAdapter);
    }
    
@@ -42,15 +56,13 @@ public class GamePlay extends Activity
    public void onWindowFocusChanged(boolean aHasFocus)
    {
       super.onWindowFocusChanged(aHasFocus);
-      View content = getWindow().findViewById(Window.ID_ANDROID_CONTENT);
-      mScreenSize.x = content.getWidth();
-      mScreenSize.y = content.getHeight();
+      mImageUtility.onWindowFocusChanged(aHasFocus);
       
       //only load split if on creation
-      if(mCreated)
+      if(aHasFocus && !mInitialized)
       {
-         setSplit(3);
-         mCreated = false;
+         initializeGame();
+         mInitialized = true;
       }
    }
    
@@ -61,15 +73,16 @@ public class GamePlay extends Activity
       {
          case R.id.settings_reset:
             mAdapter.reset();
+            countDownShuffle();
             break;
          case R.id.settings_difficulty_easy:
-            setSplit(3);
+            initializeGame(3);
             break;
          case R.id.settings_difficulty_medium:
-            setSplit(4);
+            initializeGame(4);
             break;
          case R.id.settings_difficulty_hard:
-            setSplit(5);
+            initializeGame(5);
             break;
          case R.id.settings_pickpuzzle:
             finish();
@@ -86,8 +99,58 @@ public class GamePlay extends Activity
       return true;
    }
 
-   private void setSplit(int aSplit)
+   private void initializeGame(int aSplit)
    {
-      mAdapter.setup(aSplit, mScreenSize);
+      if(mAdapter.setup(aSplit))
+      {
+         countDownShuffle();
+      }
+   }
+   
+   private void initializeGame()
+   {
+      //try to load a previous game
+      if(mAdapter.setup())
+      {
+         mAdapter.enablePuzzle();
+      }
+      else
+      {  //default load
+         initializeGame(3);
+      }
+   }
+   
+   @SuppressLint("ShowToast")
+   private void countDownShuffle()
+   {
+      final Toast lToast = Toast.makeText(this, "", Toast.LENGTH_SHORT);
+      //Count down with a toast
+      final Handler lDelay = new Handler();
+      
+      new CountDownTimer(sCountdown, sCountdownInterval)
+      {
+         @Override
+         public void onFinish()
+         {
+            lToast.cancel();
+            mAdapter.enablePuzzle();
+         }
+
+         @Override
+         public void onTick(long aMillisUntilFinished)
+         {
+            final int lTimeLeft = (int) aMillisUntilFinished / 1000;
+            
+            lDelay.post(new Runnable()
+            {
+               @Override
+               public void run()
+               {
+                  lToast.setText(""+lTimeLeft);
+                  lToast.show();
+               }
+            });
+         }
+      }.start();
    }
 }

@@ -1,56 +1,65 @@
 package net.cs76.projects.npuzzle;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
-import android.graphics.Point;
-import android.os.CountDownTimer;
-import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.Toast;
 
+/**
+ * Adapter for grid view. Serves the puzzle images for the game.
+ * Owner class of the puzzle board.
+ * @author Greg Chapman
+ *
+ */
 public class PuzzleGridAdapter extends BaseAdapter
 {
-   private Activity mContext;
-   private Point mScreenSize;
+   private ImageUtility mImageUtility;
+   private Activity mActivity;
    private int mSplit;
    private ArrayList<Bitmap> mPuzzlePieces;
    private int mScaleWidth;
    private int mScaleHeight;
    private GridView.LayoutParams mImageLayout;
    private PuzzleBoard mPuzzleBoard;
+   private PuzzleSettings mSettings;
    private PuzzleBoard.OnTouchPuzzlePiece mPuzzleOnTouch;
    private GridView mGridView;
    private Integer mSelection;
    private String mSelectionPath;
-   private static final int sBorderWidth = 1;
-   private static final int sCountdown = 4000;
-   private static final int sCountdownInterval = 1000;
    
-   public PuzzleGridAdapter(Activity aContext, Integer aSelection,
-                            String aSelectionPath, GridView aGrid)
+   private static final int sBorderWidth = 1;
+   
+   /**
+    * Serves the image views for the puzzle
+    * @param aActivity Activity of the puzzle
+    * @param aSelection Selected image index
+    * @param aSelectionPath Asset path
+    * @param aGrid Grid view containing the puzzle
+    * @param aUtility Image utility to serve images
+    */
+   public PuzzleGridAdapter(Activity aActivity, Integer aSelection,
+                            String aSelectionPath, GridView aGrid,
+                            ImageUtility aUtility)
    {
+      mImageUtility = aUtility;
       mSelection = aSelection;
       mSelectionPath = aSelectionPath;
-      mScreenSize = new Point();
       mPuzzlePieces = new ArrayList<Bitmap>();
-      mContext = aContext;
+      mActivity = aActivity;
       mGridView = aGrid;
    }
 
+   /**
+    * Clears the puzzle and images
+    */
    public void dispose()
    {
       for(Bitmap image : mPuzzlePieces)
@@ -58,6 +67,10 @@ public class PuzzleGridAdapter extends BaseAdapter
          image.recycle();
       }
       mPuzzlePieces.clear();
+      if(mPuzzleBoard != null)
+      {
+         mPuzzleBoard.dispose();
+      }
       mPuzzleBoard = null;
    }
    
@@ -66,18 +79,18 @@ public class PuzzleGridAdapter extends BaseAdapter
     * @param aSplit Split count in one dimension
     * @return True if the image exists and was split
     */
-   public boolean setup(int aSplit, Point aScreenSize)
+   public boolean setup(int aSplit)
    {
-      if(aSplit == 0)
+      if(aSplit <= 0)
       { 
          return false;
       }
       
       dispose();
       mSplit = aSplit;
-      mScreenSize = aScreenSize;
-      mScaleWidth = mScreenSize.x / mSplit;
-      mScaleHeight = mScreenSize.y / mSplit;
+      setupPuzzleSettings();
+      mScaleWidth = mImageUtility.getScreenWidth() / mSplit;
+      mScaleHeight = mImageUtility.getScreenHeight() / mSplit;
       mImageLayout = new GridView.LayoutParams(mScaleWidth, mScaleHeight);
       
       if(setupPuzzlePieces())
@@ -86,6 +99,30 @@ public class PuzzleGridAdapter extends BaseAdapter
          setupGrid();
          initializePuzzleBoard();
          return true;
+      }
+      return false;
+   }
+   
+   private void setupPuzzleSettings()
+   {
+      if(mSettings == null)
+      {
+         mSettings = PuzzleSettings.createSettings(mSplit);
+      }
+   }
+
+   /**
+    * Will attempt to load a saved game or returns false
+    * @return True if loaded game, false if no game saved
+    */
+   public boolean setup()
+   {
+      mSettings = PuzzleSettings.load();
+      if(mSettings != null)
+      {
+         boolean lStatus = setup(mSettings.split);
+         mSettings = null; //done with the loading, clear settings
+         return lStatus;
       }
       return false;
    }
@@ -98,53 +135,25 @@ public class PuzzleGridAdapter extends BaseAdapter
    private void initializePuzzleBoard()
    {
       mPuzzleBoard = new PuzzleBoard
-                           (mContext, 
-                            mPuzzlePieces, 
-                            mGridView, 
-                            mSplit,
-                            mSelection,
-                            mSelectionPath);
+                              (mActivity, 
+                               mPuzzlePieces, 
+                               mGridView, 
+                               mSettings,
+                               mSelection,
+                               mSelectionPath);
       //disable clicking
       mPuzzleOnTouch = null;
       mGridView.invalidateViews();
-      
-      countDownShuffle();
    }
-
-   @SuppressLint("ShowToast")
-   private void countDownShuffle()
+   
+   /**
+    * Shuffle game board and allow clicking events
+    */
+   public void enablePuzzle()
    {
-      final Toast lToast = Toast.makeText(mContext, "", Toast.LENGTH_SHORT);
-      //Count down with a toast
-      final Handler lDelay = new Handler();
-      
-      new CountDownTimer(sCountdown, sCountdownInterval)
-      {
-         @Override
-         public void onFinish()
-         {
-            lToast.cancel();
-            //enable clicking
-            mPuzzleOnTouch = mPuzzleBoard.new OnTouchPuzzlePiece();
-            mPuzzleBoard.shuffle();
-         }
-
-         @Override
-         public void onTick(long aMillisUntilFinished)
-         {
-            final int lTimeLeft = (int) aMillisUntilFinished / 1000;
-            
-            lDelay.post(new Runnable()
-            {
-               @Override
-               public void run()
-               {
-                  lToast.setText(""+lTimeLeft);
-                  lToast.show();
-               }
-            });
-         }
-      }.start();
+      //enable clicking
+      mPuzzleOnTouch = mPuzzleBoard.new OnTouchPuzzlePiece();
+      mPuzzleBoard.shuffle();
    }
 
    private void setupMovablePiece()
@@ -156,7 +165,7 @@ public class PuzzleGridAdapter extends BaseAdapter
 
    private boolean setupPuzzlePieces()
    {
-      Bitmap lScaled = scaleImage();
+      Bitmap lScaled = mImageUtility.scaleImage(mSelectionPath, mSelection);
       if(lScaled == null)
       {
          return false;
@@ -190,71 +199,6 @@ public class PuzzleGridAdapter extends BaseAdapter
       return true;
    }
 
-   private Bitmap scaleImage()
-   {
-      Bitmap lOriginal = loadImage();
-      if(lOriginal == null)
-      {
-         return null;
-      }
-      double lScale = 0;
-      double lDestinationWidth = mScreenSize.x;
-      double lDestinationHeight = mScreenSize.y;
-      if(lOriginal.getWidth() < lOriginal.getHeight())
-      {
-         lScale = lOriginal.getWidth() / lDestinationWidth;
-         int newHeight = (int)Math.ceil(lOriginal.getHeight() / lScale);
-         if(newHeight < lDestinationHeight)
-         {
-            lScale = lOriginal.getHeight() / lDestinationHeight;
-            lDestinationWidth = (int)Math.ceil(lOriginal.getWidth() / lScale);
-         }
-         else
-         {
-            lDestinationHeight = newHeight;
-         }
-      }
-      else
-      {
-         lScale = lOriginal.getHeight() / lDestinationHeight;
-         int newWidth = (int)Math.ceil(lOriginal.getWidth() / lScale);
-         if(newWidth < lDestinationWidth)
-         {
-            lScale = lOriginal.getWidth() / lDestinationWidth;
-            lDestinationHeight = (int)Math.ceil(lOriginal.getHeight() / lScale);
-         }
-         else
-         {
-            lDestinationWidth = newWidth;
-         }
-      }
-      Bitmap lReturn = Bitmap.createScaledBitmap
-         (lOriginal, (int)lDestinationWidth, (int)lDestinationHeight, false);
-      lOriginal.recycle();
-      return lReturn;
-   }
-
-   private Bitmap loadImage()
-   {
-      Bitmap lPuzzleImage = null;
-      try
-      {
-         String[] lList = mContext.getAssets().list(mSelectionPath);
-         if(mSelection < lList.length)
-         {
-            File lPath = new File(mSelectionPath);
-            File lImage = new File(lPath, lList[mSelection]);
-            lPuzzleImage = BitmapFactory.decodeStream
-                  (mContext.getAssets().open(lImage.getPath()), null, null);
-         }
-      } 
-      catch (IOException e)
-      {
-         e.printStackTrace();
-      }
-      return lPuzzleImage;
-   }
-
    @Override
    public int getCount()
    {
@@ -283,7 +227,7 @@ public class PuzzleGridAdapter extends BaseAdapter
       ImageView lImage = (ImageView) aConvertView;
       if(aConvertView == null)
       {
-         lImage = new ImageView(mContext);
+         lImage = new ImageView(mActivity);
       }
       lImage.setTag(aPosition);
       lImage.setLayoutParams(mImageLayout);
@@ -293,6 +237,9 @@ public class PuzzleGridAdapter extends BaseAdapter
       return lImage;
    }
 
+   /**
+    * Resets the board for playing again
+    */
    public void reset()
    {
       initializePuzzleBoard();

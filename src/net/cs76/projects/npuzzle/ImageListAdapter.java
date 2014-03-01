@@ -13,14 +13,25 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+/**
+ * Lists the images for the puzzles
+ * 
+ * @author Greg Chapman
+ *
+ */
 public class ImageListAdapter extends BaseAdapter
 {
    private Bitmap[] mCache;
    private Context mContext;
    private String[] mSelection;
    private String mSelectionPath;
-   private static LayoutInflater mInflater = null;
+   private LayoutInflater mInflater = null;
 
+   /**
+    * Lists the images in asset directory for puzzle images
+    * @param aContext Context for the activity to serve
+    * @param aSelectionPath Path in assets
+    */
    public ImageListAdapter(Context aContext, String aSelectionPath)
    {
       mSelectionPath = aSelectionPath;
@@ -39,21 +50,25 @@ public class ImageListAdapter extends BaseAdapter
                               (Context.LAYOUT_INFLATER_SERVICE);
    }
 
+   @Override
    public int getCount()
    {
       return mSelection.length;
    }
 
+   @Override
    public Object getItem(int position)
    {
       return position;
    }
 
+   @Override
    public long getItemId(int position)
    {
       return position;
    }
 
+   @Override
    public View getView(int position, View convertView, ViewGroup parent)
    {
       View lView = convertView;

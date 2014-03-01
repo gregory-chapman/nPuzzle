@@ -27,6 +27,7 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="30dp"
+        android:background="#FF000000"
         android:text="@string/congratulations"
         android:textAppearance="?android:attr/textAppearanceLarge" />
 
@@ -36,6 +37,8 @@
         android:layout_height="wrap_content"
         android:layout_above="@+id/continueBtn"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="66dp" />
+        android:layout_marginBottom="66dp"
+        android:background="#FF000000"
+        android:textStyle="bold" />
 
 </RelativeLayout>

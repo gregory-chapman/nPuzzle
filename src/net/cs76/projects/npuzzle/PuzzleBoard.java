@@ -11,17 +11,24 @@ import android.view.View;
 import android.view.View.OnTouchListener;
 import android.widget.GridView;
 
+/**
+ * Contains the puzzle model logic.
+ * Representative puzzle pieces (ids) in puzzle locations.
+ * This also loads/saves the game in progress.
+ * @author Greg Chapman
+ *
+ */
 public class PuzzleBoard
 {
    private GridView mGridView;
-   private int mSplit;
+   private PuzzleSettings mSettings;
    private ArrayList<Bitmap> mPuzzlePieces;
    private int[] mPuzzleBoard;
    private Point mBlankLocation;
    private Point mMoveLocation;
    private Point[] mMovableLocations;
    private int mUserMoves;
-   private Activity mContext;
+   private Activity mActivity;
    private int mSelection;
    private String mSelectionPath;
 
@@ -30,24 +37,33 @@ public class PuzzleBoard
       Left, Right, Up, Down
    }
 
-   public PuzzleBoard(Activity aContext, 
+   /**
+    * Constructs a puzzle board
+    * @param aActivity Activity the board is located on
+    * @param aPuzzlePieces Bitmap images of the pieces
+    * @param aGridView The grid the puzzle is located on
+    * @param aSettings The settings for the puzzle board, includes split
+    * @param aSelection The image selection to use for puzzle
+    * @param aSelectionPath The path to images in assets
+    */
+   public PuzzleBoard(Activity aActivity, 
                       ArrayList<Bitmap> aPuzzlePieces, 
                       GridView aGridView, 
-                      int aSplit, 
+                      PuzzleSettings aSettings, 
                       int aSelection, 
                       String aSelectionPath)
    {
       mUserMoves = 0;
       mSelection = aSelection;
       mSelectionPath = aSelectionPath;
-      mContext = aContext;
+      mActivity = aActivity;
       mBlankLocation = new Point();
       mMoveLocation = new Point();
       mPuzzleBoard = new int[aPuzzlePieces.size()];
       mMovableLocations = new Point[4];
       mPuzzlePieces = aPuzzlePieces;
       mGridView = aGridView;
-      mSplit = aSplit;
+      mSettings = aSettings;
       initializeBoard();
    }
 
@@ -66,13 +82,13 @@ public class PuzzleBoard
 
    private int findPosition(Point aLocation)
    {
-      return aLocation.y * mSplit + aLocation.x;
+      return aLocation.y * mSettings.split + aLocation.x;
    }
 
    private Point findLocation(int aPosition, Point aLocation)
    {
-      aLocation.y = aPosition / mSplit;
-      aLocation.x = aPosition % mSplit;
+      aLocation.y = aPosition / mSettings.split;
+      aLocation.x = aPosition % mSettings.split;
       return aLocation;
    }
 
@@ -98,13 +114,18 @@ public class PuzzleBoard
       
       if(lIsComplete && mUserMoves != 0)
       {
-         Intent lIntent = new Intent(mContext, YouWin.class);
-         lIntent.putExtra("moves", mUserMoves);
-         lIntent.putExtra("selection", mSelection);
-         lIntent.putExtra("selectionPath", mSelectionPath);
-         mContext.startActivity(lIntent);
-         mContext.finish();
+         launchWinner();
       }
+   }
+   
+   private void launchWinner()
+   {
+      Intent lIntent = new Intent(mActivity, YouWin.class);
+      lIntent.putExtra("moves", mUserMoves);
+      lIntent.putExtra("selection", mSelection);
+      lIntent.putExtra("selectionPath", mSelectionPath);
+      mActivity.startActivity(lIntent);
+      mActivity.finish();
    }
 
    private void findMovablePieces()
@@ -125,53 +146,96 @@ public class PuzzleBoard
    private Point setLocation(int aX, int aY, Point aLocation)
    {
       aLocation.x = aX;
-      if (aX < 0 || aX >= mSplit)
+      if (aX < 0 || aX >= mSettings.split)
       {
          aLocation.x = -1;
       }
       aLocation.y = aY;
-      if (aY < 0 || aY >= mSplit)
+      if (aY < 0 || aY >= mSettings.split)
       {
          aLocation.y = -1;
       }
       return aLocation;
    }
 
+   /**
+    * Shuffles the board pieces.
+    * If this is the first shuffle call after a loaded game, then the shuffle
+    * will load the previous locations
+    */
    public void shuffle()
    {
-      mUserMoves = 0;
-      //simple reverse
-      int lId = mPuzzleBoard.length - 2;
-      for (int i = 0; i < (mPuzzleBoard.length - 1); ++i)
+      if(!loadShuffle())
       {
-         mPuzzleBoard[i] = lId--;
+         mUserMoves = 0;
+         //simple reverse
+         int lId = mPuzzleBoard.length - 2;
+         for (int i = 0; i < (mPuzzleBoard.length - 1); ++i)
+         {
+            mPuzzleBoard[i] = lId--;
+         }
+         
+         //if split is even, at the end of shuffle, must swap 1,2
+         if(mSettings.split % 2 == 0)
+         {
+            lId = mPuzzleBoard[mPuzzleBoard.length - 2];
+            mPuzzleBoard[mPuzzleBoard.length - 2] = mPuzzleBoard[mPuzzleBoard.length - 3];
+            mPuzzleBoard[mPuzzleBoard.length - 3] = lId;
+         }
+         updateBlankLocation(mPuzzleBoard.length - 1);
       }
-      
-      //if split is even, at the end of shuffle, must swap 1,2
-      if(mSplit % 2 == 0)
-      {
-         lId = mPuzzleBoard[mPuzzleBoard.length - 2];
-         mPuzzleBoard[mPuzzleBoard.length - 2] = mPuzzleBoard[mPuzzleBoard.length - 3];
-         mPuzzleBoard[mPuzzleBoard.length - 3] = lId;
-      }
-      updateBlankLocation(mPuzzleBoard.length - 1);
    }
 
+   private boolean loadShuffle()
+   {
+      if(mSettings.loaded)
+      {
+         mSettings.loaded = false;
+         
+         //TODO
+         
+         return true;
+      }
+      return false;
+   }
+
+   /**
+    * @return Amount of puzzle pieces
+    */
    public int size()
    {
       return mPuzzleBoard.length;
    }
 
+   /**
+    * Gets the puzzle piece image for the puzzle location.
+    * Locations go left to right, example:
+    * 0 1 2
+    * 3 4 5
+    * 6 7 8
+    * @param aPosition Puzzle location
+    * @return Puzzle piece image
+    */
    public Bitmap getPiece(int aPosition)
    {
       return mPuzzlePieces.get(mPuzzleBoard[aPosition]);
    }
 
+   /**
+    * Gets the puzzle piece's original id at the current
+    * location index
+    * @param aPosition Puzzle location
+    * @return Original location of piece
+    */
    public long getPieceId(int aPosition)
    {
       return mPuzzleBoard[aPosition];
    }
 
+   /**
+    * Will move the puzzle piece if it is movable (blank space adjacent)
+    * @param aPosition Current position to move
+    */
    public void movePiece(int aPosition)
    {
       if(isMovable(findLocation(aPosition, mMoveLocation)))
@@ -196,7 +260,26 @@ public class PuzzleBoard
       }
       return false;
    }
+   
+   /**
+    * @return Amount of user movements
+    */
+   public int getUserMoves()
+   {
+      return mUserMoves;
+   }
 
+   /**
+    * Closing the puzzle
+    */
+   public void dispose()
+   {
+      mSettings.save();
+   }
+
+   /**
+    * Implements the touch event for puzzle pieces
+    */
    public class OnTouchPuzzlePiece implements OnTouchListener
    {
       @Override
@@ -208,10 +291,5 @@ public class PuzzleBoard
          }
          return true;
       }
-   }
-   
-   public int getUserMoves()
-   {
-      return mUserMoves;
    }
 }
