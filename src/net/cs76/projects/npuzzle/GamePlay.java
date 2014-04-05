@@ -21,6 +21,7 @@ public class GamePlay extends Activity
    private boolean mInitialized;
    private ImageUtility mImageUtility;
    private PuzzleGridAdapter mAdapter;
+   private CountDownTimer mCountDownTimer;
    private static final int sCountdown = 4000;
    private static final int sCountdownInterval = 1000;
    
@@ -50,6 +51,10 @@ public class GamePlay extends Activity
    {
       super.onDestroy();
       mAdapter.dispose();
+      if(mCountDownTimer != null)
+      {
+         mCountDownTimer.cancel();
+      }
    }
    
    @Override
@@ -72,8 +77,7 @@ public class GamePlay extends Activity
       switch(aItem.getItemId())
       {
          case R.id.settings_reset:
-            mAdapter.reset();
-            countDownShuffle();
+            reset();
             break;
          case R.id.settings_difficulty_easy:
             initializeGame(3);
@@ -91,6 +95,13 @@ public class GamePlay extends Activity
       return true;
    }
    
+   private void reset()
+   {
+      PuzzleSettings.reset(this);
+      mAdapter.reset();
+      countDownShuffle();
+   }
+
    @Override
    public boolean onCreateOptionsMenu(Menu aMenu)
    {
@@ -101,6 +112,7 @@ public class GamePlay extends Activity
 
    private void initializeGame(int aSplit)
    {
+      PuzzleSettings.reset(this);
       if(mAdapter.setup(aSplit))
       {
          countDownShuffle();
@@ -127,7 +139,7 @@ public class GamePlay extends Activity
       //Count down with a toast
       final Handler lDelay = new Handler();
       
-      new CountDownTimer(sCountdown, sCountdownInterval)
+      mCountDownTimer = new CountDownTimer(sCountdown, sCountdownInterval)
       {
          @Override
          public void onFinish()

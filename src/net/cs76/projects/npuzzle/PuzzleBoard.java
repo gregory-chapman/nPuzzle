@@ -27,10 +27,10 @@ public class PuzzleBoard
    private Point mBlankLocation;
    private Point mMoveLocation;
    private Point[] mMovableLocations;
-   private int mUserMoves;
    private Activity mActivity;
    private int mSelection;
    private String mSelectionPath;
+   private boolean mInitializing;
 
    private enum Locations
    {
@@ -53,7 +53,6 @@ public class PuzzleBoard
                       int aSelection, 
                       String aSelectionPath)
    {
-      mUserMoves = 0;
       mSelection = aSelection;
       mSelectionPath = aSelectionPath;
       mActivity = aActivity;
@@ -69,6 +68,7 @@ public class PuzzleBoard
 
    private void initializeBoard()
    {
+      mInitializing = true;
       for (int i = 0; i < mMovableLocations.length; ++i)
       {
          mMovableLocations[i] = new Point(-1, -1);
@@ -78,6 +78,7 @@ public class PuzzleBoard
          mPuzzleBoard[i] = i;
       }
       updateBlankLocation(mPuzzleBoard.length - 1);
+      mInitializing = false;
    }
 
    private int findPosition(Point aLocation)
@@ -94,6 +95,10 @@ public class PuzzleBoard
 
    private void updateBlankLocation(int aPosition)
    {
+      if(!mInitializing)
+      {
+         mSettings.blankLocation = aPosition;
+      }
       findLocation(aPosition, mBlankLocation);
       findMovablePieces();
       mGridView.invalidateViews();
@@ -102,6 +107,8 @@ public class PuzzleBoard
 
    private void checkPuzzle()
    {
+      if(mInitializing) { return; }
+      
       boolean lIsComplete = true;
       for(int i = 0; i < mPuzzleBoard.length; ++i)
       {
@@ -112,7 +119,7 @@ public class PuzzleBoard
          }
       }
       
-      if(lIsComplete && mUserMoves != 0)
+      if(lIsComplete && mSettings.userMoves != 0)
       {
          launchWinner();
       }
@@ -120,8 +127,9 @@ public class PuzzleBoard
    
    private void launchWinner()
    {
+      mSettings.completed = true;
       Intent lIntent = new Intent(mActivity, YouWin.class);
-      lIntent.putExtra("moves", mUserMoves);
+      lIntent.putExtra("moves", mSettings.userMoves);
       lIntent.putExtra("selection", mSelection);
       lIntent.putExtra("selectionPath", mSelectionPath);
       mActivity.startActivity(lIntent);
@@ -167,7 +175,8 @@ public class PuzzleBoard
    {
       if(!loadShuffle())
       {
-         mUserMoves = 0;
+         mSettings.userMoves = 0;
+         
          //simple reverse
          int lId = mPuzzleBoard.length - 2;
          for (int i = 0; i < (mPuzzleBoard.length - 1); ++i)
@@ -182,6 +191,7 @@ public class PuzzleBoard
             mPuzzleBoard[mPuzzleBoard.length - 2] = mPuzzleBoard[mPuzzleBoard.length - 3];
             mPuzzleBoard[mPuzzleBoard.length - 3] = lId;
          }
+         mPuzzleBoard[mPuzzleBoard.length - 1] = mPuzzleBoard.length - 1;
          updateBlankLocation(mPuzzleBoard.length - 1);
       }
    }
@@ -191,12 +201,26 @@ public class PuzzleBoard
       if(mSettings.loaded)
       {
          mSettings.loaded = false;
-         
-         //TODO
-         
-         return true;
+         System.arraycopy(mSettings.puzzleLocations, 0, mPuzzleBoard, 0, mPuzzleBoard.length);
+         if(valid(mPuzzleBoard))
+         {
+            updateBlankLocation(mSettings.blankLocation);
+            return true;
+         }
       }
       return false;
+   }
+
+   private boolean valid(int[] aPuzzleBoard)
+   {
+      for(int piece : aPuzzleBoard)
+      {
+         if(piece >= mPuzzleBoard.length)
+         {
+            return false;
+         }
+      }
+      return true;
    }
 
    /**
@@ -240,12 +264,13 @@ public class PuzzleBoard
    {
       if(isMovable(findLocation(aPosition, mMoveLocation)))
       {
-         ++mUserMoves;
+         ++mSettings.userMoves;
          int lBlankPosition = findPosition(mBlankLocation);
          int lBlankId = mPuzzleBoard[lBlankPosition];
          mPuzzleBoard[lBlankPosition] = mPuzzleBoard[aPosition];
          mPuzzleBoard[aPosition] = lBlankId;
          updateBlankLocation(aPosition);
+         save();
       }
    }
 
@@ -266,7 +291,7 @@ public class PuzzleBoard
     */
    public int getUserMoves()
    {
-      return mUserMoves;
+      return mSettings.userMoves;
    }
 
    /**
@@ -274,7 +299,13 @@ public class PuzzleBoard
     */
    public void dispose()
    {
-      mSettings.save();
+      save();
+   }
+
+   private void save()
+   {
+      System.arraycopy(mPuzzleBoard, 0, mSettings.puzzleLocations, 0, mSettings.puzzleLocations.length);
+      mSettings.save(mActivity);
    }
 
    /**

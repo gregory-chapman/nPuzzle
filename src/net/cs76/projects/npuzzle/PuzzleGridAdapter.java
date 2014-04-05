@@ -107,7 +107,7 @@ public class PuzzleGridAdapter extends BaseAdapter
    {
       if(mSettings == null)
       {
-         mSettings = PuzzleSettings.createSettings(mSplit);
+         mSettings = PuzzleSettings.createSettings(mSplit, mSelection);
       }
    }
 
@@ -117,12 +117,10 @@ public class PuzzleGridAdapter extends BaseAdapter
     */
    public boolean setup()
    {
-      mSettings = PuzzleSettings.load();
+      mSettings = PuzzleSettings.load(mActivity);
       if(mSettings != null)
       {
-         boolean lStatus = setup(mSettings.split);
-         mSettings = null; //done with the loading, clear settings
-         return lStatus;
+         return setup(mSettings.split);
       }
       return false;
    }

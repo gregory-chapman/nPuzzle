@@ -21,21 +21,29 @@ public class ImageSelection extends ListActivity
    {
       super.onCreate(savedInstanceState);
       
-      //TODO check if saved game
-      
-      
       mAdapter = new ImageListAdapter(this, sAssetPath);
       setListAdapter(mAdapter);
+      
+      PuzzleSettings lSettings = PuzzleSettings.load(this);
+      if(lSettings != null)
+      {
+         launchPuzzle(lSettings.selection);
+      }
+   }
+   
+   private void launchPuzzle(int aPosition)
+   {
+      Intent lLaunchPuzzle = new Intent(this, GamePlay.class);
+      lLaunchPuzzle.putExtra("selection", aPosition);
+      lLaunchPuzzle.putExtra("selection.path", sAssetPath);
+      startActivity(lLaunchPuzzle);
    }
    
    @Override
    protected void onListItemClick(ListView aListView, View aView, int aPosition, long aId) 
    {
-      Intent lLaunchPuzzle = new Intent(this, GamePlay.class);
-      
-      lLaunchPuzzle.putExtra("selection", aPosition);
-      lLaunchPuzzle.putExtra("selection.path", sAssetPath);
-      startActivity(lLaunchPuzzle);
+      PuzzleSettings.reset(this);
+      launchPuzzle(aPosition);
    }
 
 }

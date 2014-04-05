@@ -83,29 +83,29 @@ public class ImageUtility
       if(lOriginal.getWidth() < lOriginal.getHeight())
       {
          lScale = lOriginal.getWidth() / lDestinationWidth;
-         int newHeight = (int)Math.ceil(lOriginal.getHeight() / lScale);
-         if(newHeight < lDestinationHeight)
+         int lNewHeight = (int)Math.ceil(lOriginal.getHeight() / lScale);
+         if(lNewHeight < lDestinationHeight)
          {
             lScale = lOriginal.getHeight() / lDestinationHeight;
             lDestinationWidth = (int)Math.ceil(lOriginal.getWidth() / lScale);
          }
          else
          {
-            lDestinationHeight = newHeight;
+            lDestinationHeight = lNewHeight;
          }
       }
       else
       {
          lScale = lOriginal.getHeight() / lDestinationHeight;
-         int newWidth = (int)Math.ceil(lOriginal.getWidth() / lScale);
-         if(newWidth < lDestinationWidth)
+         int lNewWidth = (int)Math.ceil(lOriginal.getWidth() / lScale);
+         if(lNewWidth < lDestinationWidth)
          {
             lScale = lOriginal.getWidth() / lDestinationWidth;
             lDestinationHeight = (int)Math.ceil(lOriginal.getHeight() / lScale);
          }
          else
          {
-            lDestinationWidth = newWidth;
+            lDestinationWidth = lNewWidth;
          }
       }
       Bitmap lReturn = Bitmap.createScaledBitmap
