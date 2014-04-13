@@ -201,7 +201,7 @@ public class PuzzleBoard
       if(mSettings.loaded)
       {
          mSettings.loaded = false;
-         System.arraycopy(mSettings.puzzleLocations, 0, mPuzzleBoard, 0, mPuzzleBoard.length);
+         mSettings.getPuzzleBoard(mPuzzleBoard);
          if(valid(mPuzzleBoard))
          {
             updateBlankLocation(mSettings.blankLocation);
@@ -304,7 +304,7 @@ public class PuzzleBoard
 
    private void save()
    {
-      System.arraycopy(mPuzzleBoard, 0, mSettings.puzzleLocations, 0, mSettings.puzzleLocations.length);
+      mSettings.setPuzzleBoard(mPuzzleBoard);
       mSettings.save(mActivity);
    }
 

@@ -5,7 +5,11 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.util.Log;
 
-
+/**
+ * Settings for persistent puzzle. Save state, load state
+ * @author Greg Chapman
+ *
+ */
 public class PuzzleSettings
 {
    public boolean loaded;
@@ -106,15 +110,38 @@ public class PuzzleSettings
       return lValue.toString();
    }
 
+   public static void reset(Activity aActivity)
+   {
+      SharedPreferences lPreferences = aActivity.getSharedPreferences
+                                          ("nPuzzle", Activity.MODE_PRIVATE);
+      Editor lEdit = lPreferences.edit();
+      lEdit.putBoolean("completed", true);
+      lEdit.apply();
+   }
+   
    protected PuzzleSettings()
    {
    }
 
-   public static void reset(Activity aActivity)
+   /**
+    * Will get the puzzle board from the settings
+    * @param aPuzzleBoard Puzzle board to load the settings to
+    */
+   public void getPuzzleBoard(int[] aPuzzleBoard)
    {
-      SharedPreferences lPreferences = aActivity.getSharedPreferences("nPuzzle", Activity.MODE_PRIVATE);
-      Editor lEdit = lPreferences.edit();
-      lEdit.putBoolean("completed", true);
-      lEdit.apply();
+      System.arraycopy(puzzleLocations, 0, aPuzzleBoard, 0, aPuzzleBoard.length);
+   }
+
+   /**
+    * Will set the puzzle board
+    * @param aPuzzleBoard
+    */
+   public void setPuzzleBoard(int[] aPuzzleBoard)
+   {
+      if(puzzleLocations.length != aPuzzleBoard.length)
+      {
+         puzzleLocations = new int[aPuzzleBoard.length];
+      }
+      System.arraycopy(aPuzzleBoard, 0, puzzleLocations, 0, puzzleLocations.length);
    }
 }

@@ -23,7 +23,6 @@ public class PuzzleGridAdapter extends BaseAdapter
 {
    private ImageUtility mImageUtility;
    private Activity mActivity;
-   private int mSplit;
    private ArrayList<Bitmap> mPuzzlePieces;
    private int mScaleWidth;
    private int mScaleHeight;
@@ -87,10 +86,9 @@ public class PuzzleGridAdapter extends BaseAdapter
       }
       
       dispose();
-      mSplit = aSplit;
-      setupPuzzleSettings();
-      mScaleWidth = mImageUtility.getScreenWidth() / mSplit;
-      mScaleHeight = mImageUtility.getScreenHeight() / mSplit;
+      setupPuzzleSettings(aSplit);
+      mScaleWidth = mImageUtility.getScreenWidth() / mSettings.split;
+      mScaleHeight = mImageUtility.getScreenHeight() / mSettings.split;
       mImageLayout = new GridView.LayoutParams(mScaleWidth, mScaleHeight);
       
       if(setupPuzzlePieces())
@@ -103,12 +101,13 @@ public class PuzzleGridAdapter extends BaseAdapter
       return false;
    }
    
-   private void setupPuzzleSettings()
+   private void setupPuzzleSettings(int aSplit)
    {
       if(mSettings == null)
       {
-         mSettings = PuzzleSettings.createSettings(mSplit, mSelection);
+         mSettings = PuzzleSettings.createSettings(aSplit, mSelection);
       }
+      mSettings.split = aSplit;
    }
 
    /**
@@ -127,7 +126,7 @@ public class PuzzleGridAdapter extends BaseAdapter
 
    private void setupGrid()
    {
-      mGridView.setNumColumns(mSplit);
+      mGridView.setNumColumns(mSettings.split);
    }
 
    private void initializePuzzleBoard()
@@ -176,10 +175,10 @@ public class PuzzleGridAdapter extends BaseAdapter
       lPaint.setStyle(Style.STROKE);
       
       int lX = 0, lY = 0;
-      for(int y = 0; y < mSplit; ++y)
+      for(int y = 0; y < mSettings.split; ++y)
       {
          lX = 0;
-         for(int x = 0; x < mSplit; ++x)
+         for(int x = 0; x < mSettings.split; ++x)
          {
             Bitmap lPiece = Bitmap.createBitmap
                   (lScaled, lX, lY, mScaleWidth, mScaleHeight);

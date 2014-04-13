@@ -54,6 +54,11 @@ public class GamePlay extends Activity
       if(mCountDownTimer != null)
       {
          mCountDownTimer.cancel();
+         mCountDownTimer = null;
+         //if the count down was still in progress
+         //at the time of disposal, the game wasn't valid
+         //reset the settings
+         PuzzleSettings.reset(this);
       }
    }
    
@@ -146,6 +151,7 @@ public class GamePlay extends Activity
          {
             lToast.cancel();
             mAdapter.enablePuzzle();
+            mCountDownTimer = null;
          }
 
          @Override

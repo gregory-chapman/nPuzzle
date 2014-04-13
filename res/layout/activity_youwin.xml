@@ -35,9 +35,9 @@
         android:id="@+id/moves"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/continueBtn"
+        android:layout_below="@+id/continueBtn"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="66dp"
+        android:layout_marginTop="66dp"
         android:background="#FF000000"
         android:textStyle="bold" />
 
